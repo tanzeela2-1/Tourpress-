@@ -4,13 +4,42 @@ export default function tourController() {
 	return {
 		// Get all tours
 		getAllTours: async (req, res) => {
-			try {
-				const tours = await Tour.find();
+			const queryObj = { ...req.query };
 
-				// jsend format
+			const excludeFields = ['page', 'sort', 'limit', 'field'];
+			excludeFields.forEach((el) => delete queryObj[el]);
+
+			let queryStr = JSON.stringify(queryObj);
+			queryStr = queryStr.replace(/\b(gt|gte|lt|lte)\b/g, (match) => `$${match}`);
+			try {
+				let query = Tour.find(JSON.parse(queryStr)).sort('name rating');
+				if (req.query.sort) {
+					const sortBy = req.query.sort.split(',').join(' ');
+
+					query = query.sort(sortBy);
+				} else {
+					query = query.sort('-createdAt');
+				}
+				if (req.query.field) {
+					const limitFields = req.query.field.split(',').join(' ');
+					console.log(limitFields);
+					query = query.select(limitFields);
+				} else {
+					query = query.select('-__v');
+				}
+				const page = req.query.page * 1 || 1;
+				const limit = req.query.limit * 1 || 10;
+				const skip = (page - 1) * limit;
+				query = query.skip(skip).limit(limit);
+
+				const tours = await query;
+
+				const total = await Tour.countDocuments();
+
 				res.status(200).json({
 					status: 'success', //success or fail or error
 					results: tours.length,
+					total,
 					data: {
 						tours,
 					},
@@ -42,7 +71,7 @@ export default function tourController() {
 				});
 			}
 		},
-		// Get a tour
+		// Get a tourgfgfgf
 		getTour: async (req, res) => {
 			try {
 				const id = req.params.id;

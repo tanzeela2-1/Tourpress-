@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-
+import validator from 'validator';
 const userSchema = new mongoose.Schema({
 	name: {
 		type: String,
@@ -9,11 +9,25 @@ const userSchema = new mongoose.Schema({
 		type: String,
 		required: [true, 'Please provide an email'],
 		unique: true,
+		lowercase: true,
+		validate: [validator.isEmail, 'Please provide a valid email'],
 	},
 	password: {
 		type: String,
 		required: [true, 'Please provide a password'],
+		min: 10,
 	},
+	passwordConfirm: {
+		type: String,
+		required: [true, 'Please provide confirm password'],
+		validate: {
+			validator: function (passwordConfirm) {
+				return passwordConfirm === this.password;
+			},
+			message: 'password do not match!',
+		},
+	},
+
 	passwordChangeAt: Date,
 	role: {
 		type: String,
